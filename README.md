@@ -84,3 +84,8 @@ How to write a plugin:
  bool, string, error). The "structures.Test" struct is an object that specifies which IP & port are involved with the test.
  The framework will handle making the socket to the target, so the plugin should not need to make its own connection,
  and should not close the socket.
+
+ Once you have the plugin written, import the go file in the framework's "plugins.go" file, and add a line in the 
+ CollectPlugins() method to tell the framework where your plugin is, and what it's name is. For example:
+ 
+ 	RegisterPlugin("http_banner", Threebits_plugins_public.HTTPBanner{})
