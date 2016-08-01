@@ -9,8 +9,11 @@ Threebits
 
  The target file is expected to be a simple text file, one target IP and port combination per line, comma-separated. So,
  the target file should look like this:
+ 
   192.168.1.1,80
+ 
   192.168.1.2,80
+ 
   176.16.1.1,443
 
  etc. 
@@ -25,34 +28,57 @@ How to run it:
  If you run the threebits binary with the "-h" option, you'll get the following hints:
  
    -IP string
+ 
     	IP of Server (default "0.0.0.0")
+ 
   -mode string
+ 
     	mode to run in: m=Manager, w=worker, l=list plugins (default "l")
+ 
   -numworkers int
+ 
     	number of workers to run (Only used in worker mode) (default 5000)
+ 
   -output string
+ 
     	where to send output. if specified, will write to that filename (only used in manager mode) (default "output.csv")
+ 
   -port int
+ 
     	Port of Server (default 8000)
+ 
   -quiet
+ 
     	quiet mode: if false, will record falses as well as trues (only used in manager mode) (default true)
+ 
   -scans string
+ 
     	comma-separated list of commands to run (only used in manager mode)
+ 
   -targets string
+ 
     	file containing the targets to scan, one per line (only used in manager mode) (default "targetlist.txt")
+ 
   -timeout int
+ 
     	socket timeout in seconds (only used in worker mode) (default 3)
+ 
   -whitelist string
-      	file containing a list of IPs to skip even if they are in the target list (only used in manager mode) (default "whitelist.txt")
+ 
+      	file containing a list of IPs to skip even if they are in the target list (only used in manager mode) (default 
+      	"whitelist.txt")
 
 So, for example, to run the manager with default settings, you would type:
+
  ./threebits -mode m -scans HTTPBanner
  
 To run workers that connect to the manager, you'll need to know the IP of the manager (for example 192.168.1.100):
+
  ./threebits -mode w -IP 192.168.1.100
   
 
 How to write a plugin:
+
  Plugins are go interfaces, that are expected to implement two methods: "Protocol" (which takes no arguments and is 
  expected to return just "tcp" or "udp"), and "Handle" (which takes arguments net.Conn, and structures.Test; and returns
  bool, string, error). The "structures.Test" struct is an object that specifies which IP & port are involved with the test.
