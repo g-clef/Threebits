@@ -1,11 +1,12 @@
 package Threebits
 
 import (
-	"flag"
+    "flag"
 	"fmt"
 	"sync"
 	"os"
 )
+
 
 func Run(){
 	CollectPlugins()

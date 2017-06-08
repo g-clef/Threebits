@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"github.com/accessviolationsec/Threebits/structures"
+	"github.com/g-clef/Threebits/structures"
 	"time"
 )
+
 
 func jobGetter(serverIP string, port int, authKey string, input chan structures.Test, wg *sync.WaitGroup, Done chan struct{}){
 	defer wg.Done()

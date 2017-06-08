@@ -12,7 +12,7 @@ import (
 	"net"
 	"strconv"
 	"net/http"
-	"github.com/accessviolationsec/Threebits/structures"
+	"github.com/g-clef/Threebits/structures"
 )
 
 
@@ -26,7 +26,7 @@ type ResponseProvider struct {
 	Channel chan structures.Response
 	AuthKey string
 	Done chan struct{}
-}
+}        
 
 
 func (t *TestProvider) GetJob(authkey string, reply *structures.Test) error{
@@ -123,6 +123,7 @@ func readTargets(targets string, whitelist string, scans string, input chan stru
 				Target: target[0],
 				Port: port,
 				Test: scan,
+				Args: structures.AllArgs,
 			}
 			select {
 				case input <- message:

@@ -17,8 +17,8 @@ package Threebits
 import (
 	// add other private repos of plugins here
 	"errors"
-	"github.com/accessviolationsec/Threebits/structures"
-	"github.com/accessviolationsec/Threebits-plugins-public"
+	"github.com/g-clef/Threebits/structures"
+	"github.com/g-clef/Threebits-plugins-public"
 	"net"
 )
 
@@ -26,15 +26,18 @@ func CollectPlugins(){
 	RegisterPlugin("http_banner", Threebits_plugins_public.HTTPBanner{})
 	RegisterPlugin("https_banner", Threebits_plugins_public.HTTPSBanner{})
 	RegisterPlugin("ssh_banner", Threebits_plugins_public.SSHBanner{})
+	RegisterPlugin("generic_hex", Threebits_plugins_public.GenericHexTCP{})
 	// add other RegisterPlugin lines here to register your
 	// plugins with the system.
 }
+
 
 func RegisterPlugin(pluginName string, target Plugin) error {
 	if _, ok := Plugins[pluginName]; ok{
 		return errors.New("Plugin already exists")
 	}
-	Plugins[pluginName] = target
+	target.DefineArguments()
+    Plugins[pluginName] = target
 	return nil
 }
 
@@ -42,6 +45,7 @@ func RegisterPlugin(pluginName string, target Plugin) error {
 type Plugin interface {
 	Handle(socket net.Conn, test structures.Test) (bool, string, error)
 	Protocol()(string)
+	DefineArguments()
 }
 
 

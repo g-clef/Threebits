@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/accessviolationsec/Threebits"
+	"github.com/g-clef/Threebits"
 	"math/rand"
 	"time"
 )
