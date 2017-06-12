@@ -23,10 +23,12 @@ type Arguments struct {
     Generic_TCP struct {
         Send string
         Receive string
+        ReceiveStart string
         }
     Generic_UDP struct {
         Send string
         Receive string 
+        ReceiveStart string
         }
 }
 
