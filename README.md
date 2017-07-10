@@ -11,9 +11,9 @@ Threebits
  the target file should look like this:
  
   192.168.1.1,80
- 
+  
   192.168.1.2,80
- 
+  
   176.16.1.1,443
 
  etc. 
@@ -77,21 +77,3 @@ To run workers that connect to the manager, you'll need to know the IP of the ma
  ./threebits -mode w -IP 192.168.1.100
   
 
-How to write a plugin:
-
- Plugins are go interfaces, that are expected to implement three methods: "Protocol" (which takes no arguments and is 
- expected to return just "tcp" or "udp"), "Initialize" (which takes no arguments and is expected to return an error) and 
- "Handle" (which takes arguments net.Conn, and structures.Test; and returns bool, string, error). The framework will call 
- "Protocol" to determine whether a given test target should be given to your plugin. The "Initialize" function will be 
- called once at the startup of threebits. That is where you can define extra command line arguments, set up useful variables
- for your plugin, etc. The "Handle" function will be called once for each target. The framework will handle making and closing
- the socket to the target, so the plugin should not need to make its own connection, and should not close the socket. Plugins
- should only write to and read from the socket as necessary to determine if their test succeeds or fails, and return the corresponding
- bool, string, error conditions. (bool for success/failure, string used to communicate a reason/message, error for golang error propogation).
- 
- For an example of a simple plugin, see the GenericHexTCP plugin in the Threebits-plugins-public collection.
-
- Once you have the plugin written, import the go file in the framework's "plugins.go" file, and add a line in the 
- CollectPlugins() method to tell the framework where your plugin is, and what it's name is. For example:
- 
- 	RegisterPlugin("http_banner", Threebits_plugins_public.HTTPBanner{})
