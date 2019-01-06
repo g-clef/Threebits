@@ -1,74 +1,74 @@
 package Threebits
 
-
 import (
+	"fmt"
+	"github.com/g-clef/Threebits/structures"
+	"net"
 	"net/rpc"
 	"strconv"
-	"fmt"
-	"net"
 	"sync"
-	"github.com/g-clef/Threebits/structures"
 	"time"
 )
 
-
-func jobGetter(serverIP string, port int, authKey string, input chan structures.Test, wg *sync.WaitGroup, Done chan struct{}){
+func jobGetter(serverIP string, port int, authKey string, input chan structures.Test, wg *sync.WaitGroup, Done chan struct{}) {
 	defer wg.Done()
 
-	client, err := rpc.DialHTTP("tcp", serverIP + ":" + strconv.Itoa(port))
+	client, err := rpc.DialHTTP("tcp", serverIP+":"+strconv.Itoa(port))
 	if err != nil {
 		fmt.Println("Error connecting to server", err)
 	}
 
-	MAINLOOP: for {
+MAINLOOP:
+	for {
 		var test structures.Test
 
 		err := client.Call("TestProvider.GetJob", authKey, &test)
-		if err != nil{
+		if err != nil {
 			break
 		}
 		// we might get an empty test...this seems to also indicate that
 		// the channel on the other end is closed, and we should stop.
-		if test == (structures.Test{}){
+		if test == (structures.Test{}) {
 			break
 		}
 		select {
 		case input <- test:
-		case <-Done: break MAINLOOP
+		case <-Done:
+			break MAINLOOP
 		}
 	}
 	client.Close()
 }
 
-func responseSender(serverIP string, port int, authKey string, output chan structures.Response, Done chan struct{}){
+func responseSender(serverIP string, port int, authKey string, output chan structures.Response, Done chan struct{}) {
 
 	var resp structures.Response
 
-
-	client, err := rpc.DialHTTP("tcp", serverIP + ":" + strconv.Itoa(port))
+	client, err := rpc.DialHTTP("tcp", serverIP+":"+strconv.Itoa(port))
 	if err != nil {
 		fmt.Println("Error connecting to server", err)
 	}
 
-	MAINLOOP: for {
+MAINLOOP:
+	for {
 		var success bool
 
 		select {
-		case resp = <- output:
+		case resp = <-output:
 			resp.AuthKey = authKey
 			err := client.Call("ResponseProvider.SendResponse", resp, &success)
-			if err != nil{
+			if err != nil {
 				fmt.Println("Error sending response", err)
 				break MAINLOOP
 			}
-		case <- Done: break MAINLOOP
+		case <-Done:
+			break MAINLOOP
 		}
 	}
 	client.Close()
 }
 
-
-func RunWorkers(serverIP string, port int, numWorkers int, timeout int, wg *sync.WaitGroup){
+func RunWorkers(serverIP string, port int, numWorkers int, timeout int, iface string, wg *sync.WaitGroup) {
 	// In normal operation, the job getter will see that the connection
 	// from the manager closed, which will cause the job getter to close.
 	// At that point, the workerWG.wait() will return, Done() will be closed,
@@ -81,24 +81,22 @@ func RunWorkers(serverIP string, port int, numWorkers int, timeout int, wg *sync
 	input := make(chan structures.Test)
 	results := make(chan structures.Response)
 
-
 	workerWG.Add(1)
 	go jobGetter(serverIP, port, "test", input, &workerWG, Done)
 	go responseSender(serverIP, port, "test", results, Done)
-	for i:=0; i < numWorkers; i++{
-		go worker(timeout, input, results, Done)
+	for i := 0; i < numWorkers; i++ {
+		go worker(timeout, input, results, iface, Done)
 	}
 
 	workerWG.Wait()
 	close(Done)
 }
 
-
-func worker(timeout int, input chan structures.Test, output chan structures.Response, Done chan struct{}){
+func worker(timeout int, input chan structures.Test, output chan structures.Response, localaddr string, Done chan struct{}) {
 	var test structures.Test
 	var response structures.Response
 	var responseMessage string
-	var tOut time.Duration = time.Duration(timeout) * time.Second
+	var tOut = time.Duration(timeout) * time.Second
 
 	for {
 		select {
@@ -107,9 +105,18 @@ func worker(timeout int, input chan structures.Test, output chan structures.Resp
 				if test.Test != pluginname {
 					continue
 				}
-				sock, err := net.DialTimeout(plugin.Protocol(), test.GetAddr(),tOut)
+				var sock net.Conn
+				var err error
+				if localaddr != "" {
+					ip := net.ParseIP(localaddr)
+					targetNet := &net.IPAddr{IP: ip, Zone: ""}
+					dialer := net.Dialer{LocalAddr: targetNet, Timeout: tOut}
+					sock, err = dialer.Dial(plugin.Protocol(), test.GetAddr())
+				} else {
+					sock, err = net.DialTimeout(plugin.Protocol(), test.GetAddr(), tOut)
+				}
 				if err != nil {
-					response = structures.Response{Success:false, Test: test, Message:err.Error()}
+					response = structures.Response{Success: false, Test: test, Message: err.Error()}
 				} else {
 					now := time.Now()
 					err = sock.SetDeadline(now.Add(tOut))
@@ -119,7 +126,7 @@ func worker(timeout int, input chan structures.Test, output chan structures.Resp
 					} else {
 						responseMessage = message
 					}
-					response = structures.Response{Success:success, Test:test, Message:responseMessage}
+					response = structures.Response{Success: success, Test: test, Message: responseMessage}
 					sock.Close()
 				}
 				output <- response

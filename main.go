@@ -1,14 +1,13 @@
 package Threebits
 
 import (
-    "flag"
+	"flag"
 	"fmt"
-	"sync"
 	"os"
+	"sync"
 )
 
-
-func Run(){
+func Run() {
 	CollectPlugins()
 	var IP = flag.String("IP", "0.0.0.0", "IP of Server")
 	var port = flag.Int("port", 8000, "Port of Server")
@@ -20,28 +19,30 @@ func Run(){
 	var quiet = flag.Bool("quiet", true, "quiet mode: if false, will record falses as well as trues (only used in manager mode)")
 	var numWorkers = flag.Int("numworkers", 5000, "number of workers to run (Only used in worker mode)")
 	var timeout = flag.Int("timeout", 3, "socket timeout in seconds (only used in worker mode)")
+	var localaddr = flag.String("localaddr", "", "Source address to be used for connections (only used in worker mode)")
 	var wg sync.WaitGroup
 
 	flag.Parse()
 
 	switch *mode {
-		case "m":
-			// bail out if no actual scans are given.
-			if len(*scansToRun) == 0{
-				fmt.Println("No scans given to run")
-				os.Exit(1)
-			}
-			wg.Add(1)
-			RunManager(*IP, *port, *targetlist, *whitelist, *scansToRun, *output, *quiet, &wg)
-		case "w":
-			wg.Add(1)
-			RunWorkers(*IP, *port, *numWorkers, *timeout, &wg)
-		case "l":
-			fmt.Println("Plugins:")
-			for plugin := range Plugins{
-				fmt.Println("\t" + plugin)
-			}
-		default: fmt.Println("unknown mode")
+	case "m":
+		// bail out if no actual scans are given.
+		if len(*scansToRun) == 0 {
+			fmt.Println("No scans given to run")
+			os.Exit(1)
+		}
+		wg.Add(1)
+		RunManager(*IP, *port, *targetlist, *whitelist, *scansToRun, *output, *quiet, &wg)
+	case "w":
+		wg.Add(1)
+		RunWorkers(*IP, *port, *numWorkers, *timeout, *localaddr, &wg)
+	case "l":
+		fmt.Println("Plugins:")
+		for plugin := range Plugins {
+			fmt.Println("\t" + plugin)
+		}
+	default:
+		fmt.Println("unknown mode")
 	}
 	wg.Wait()
 }
